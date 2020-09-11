@@ -1,8 +1,10 @@
 from django.db.models import Prefetch
 from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .constants import EVENT_ACTION_CHANGE_PHASE, EVENT_ACTION_JOIN, EVENT_ACTION_LEAVE
 from .models import ClassRoom, Course, Event
 from .serializers import ClassRoomSerializer, CourseSerializer
 from .utils import build_error_response
@@ -22,18 +24,29 @@ class ClassRoomDetail(generics.RetrieveAPIView):
     serializer_class = ClassRoomSerializer
 
 class JoinClassRoom(APIView):
+    permission_classes = (IsAuthenticated,)
 
-    def post(self, _request, class_room_id):
+    def post(self, request, class_room_id):
         try:
             class_room = ClassRoom.objects.get(pk=class_room_id)
         except ClassRoom.DoesNotExist:
             return build_error_response(status.HTTP_404_NOT_FOUND, 'This Classroom do not exist')
-        # Placeholder until User can join and leave
-        e = Event(join='someone join', class_room=class_room)
-        e.save()
+        class_room = class_room.join(request.user)
+        return Response(ClassRoomSerializer(class_room).data, status.HTTP_200_OK)
+
+class LeaveClassRoom(APIView):
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, class_room_id):
+        try:
+            class_room = ClassRoom.objects.get(pk=class_room_id)
+        except ClassRoom.DoesNotExist:
+            return build_error_response(status.HTTP_404_NOT_FOUND, 'This Classroom do not exist')
+        class_room = class_room.leave(request.user)
         return Response(ClassRoomSerializer(class_room).data, status.HTTP_200_OK)
 
 class CreateClassRoom(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request):
         course_id = request.data.get('course_id')
@@ -41,15 +54,13 @@ class CreateClassRoom(APIView):
             course = Course.objects.get(pk=course_id)
         except Course.DoesNotExist:
             return build_error_response(status.HTTP_404_NOT_FOUND, 'This Course does not exist')
-        class_room = ClassRoom(course=course)
-        class_room.save()
-        # Placeholder until User can join and leave
-        e = Event(join='someone join', class_room=class_room)
-        e.save()
+        # Create class room
+        class_room = ClassRoom.kick_off(course, request.user)
 
         return Response(ClassRoomSerializer(class_room).data, status.HTTP_200_OK)
 
 class ChangePhase(APIView):
+    permission_classes = (IsAuthenticated,)
 
     def post(self, request, class_room_id):
         to_phase_id = request.data.get('to_phase_id', None)
@@ -59,6 +70,8 @@ class ChangePhase(APIView):
             class_room = ClassRoom.objects.get(pk=class_room_id)
         except ClassRoom.DoesNotExist:
             return build_error_response(status.HTTP_404_NOT_FOUND, 'This Class did not start')
-        e = Event(to_phase_id=to_phase_id, class_room=class_room)
+        # Create Event
+        e = Event(action=EVENT_ACTION_CHANGE_PHASE, to_phase_id=to_phase_id,
+                  class_room=class_room, user=request.user)
         e.save()
         return Response(ClassRoomSerializer(class_room).data, status.HTTP_200_OK)

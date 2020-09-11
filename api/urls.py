@@ -1,4 +1,5 @@
 from django.urls import include, path
+from rest_framework.authtoken.views import obtain_auth_token
 
 from .views import (
   ChangePhase,
@@ -6,7 +7,8 @@ from .views import (
   CourseDetail,
   CourseList,
   CreateClassRoom,
-  JoinClassRoom
+  JoinClassRoom,
+  LeaveClassRoom
 )
 
 
@@ -17,5 +19,6 @@ urlpatterns = [
     path("classrooms/", CreateClassRoom.as_view(), name="create_class_room"),
     path("classrooms/<int:class_room_id>/change_phase", ChangePhase.as_view(), name="change_phase"),
     path("classrooms/<int:class_room_id>/join", JoinClassRoom.as_view(), name="join_class_room"),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    path("classrooms/<int:class_room_id>/leave", LeaveClassRoom.as_view(), name="leave_class_room"),
+    path('auth/', obtain_auth_token, name='api_token_auth')
 ]
