@@ -70,8 +70,5 @@ class ChangePhase(APIView):
             class_room = ClassRoom.objects.get(pk=class_room_id)
         except ClassRoom.DoesNotExist:
             return build_error_response(status.HTTP_404_NOT_FOUND, 'This Class did not start')
-        # Create Event
-        e = Event(action=EVENT_ACTION_CHANGE_PHASE, to_phase_id=to_phase_id,
-                  class_room=class_room, user=request.user)
-        e.save()
+        class_room.change_phase(request.user, to_phase_id)
         return Response(ClassRoomSerializer(class_room).data, status.HTTP_200_OK)

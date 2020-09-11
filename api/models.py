@@ -19,21 +19,21 @@ class Phase(models.Model):
 class Course(models.Model):
     title = models.CharField(max_length=60)
     phases = models.ManyToManyField(Phase, blank=True)
-    default_phase = models.ForeignKey(Phase, null= True, on_delete=models.CASCADE,
+    default_phase = models.ForeignKey(Phase, null= True, on_delete=models.SET_NULL,
                                       related_name='start_of_course')
 
     def __str__(self):
         return self.title
 
 class ClassRoom(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='class_rooms')
+    course = models.ForeignKey(Course, on_delete=models.RESTRICT, related_name='class_rooms')
     attending = models.ManyToManyField(User, blank=True, related_name='class_rooms')
 
     @classmethod
     def kick_off(cls, course, user):
         class_room = cls(course=course)
         class_room.save()
-        class_room.change_phase(user, course.default_phase)
+        class_room.change_phase(user, course.default_phase.id)
         class_room.join(user)
         return class_room
 
@@ -49,8 +49,10 @@ class ClassRoom(models.Model):
         Event(action=EVENT_ACTION_LEAVE, class_room=self, user=user).save()
         return self
 
-    def change_phase(self, user, phase):
-        Event(action=EVENT_ACTION_CHANGE_PHASE, class_room=self, user=user, to_phase=phase).save()
+    def change_phase(self, user, phase_id):
+        if phase_id in [phase.id for phase in self.course.phases.all()]:
+            Event(action=EVENT_ACTION_CHANGE_PHASE, class_room=self, user=user,
+                  to_phase_id=phase_id).save()
         return self
 
     def __str__(self):
