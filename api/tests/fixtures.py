@@ -24,3 +24,10 @@ def class_room(db, course):
   class_room = ClassRoom(course=course)
   class_room.save()
   return class_room
+
+
+@pytest.fixture
+def phase(db):
+    phase = Phase(title='some new phase')
+    phase.save()
+    return phase

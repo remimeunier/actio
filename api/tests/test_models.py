@@ -77,10 +77,3 @@ class TestClassRoom:
         assert event.user == authorized_user
         assert event.to_phase_id == class_room.course.phases.all()[1].id
 
-    @pytest.mark.django_db
-    def test_change_to_incorrect_phase(self, authorized_user, class_room):
-        phase = Phase(title='Cool')
-        phase.save()
-        class_room.change_phase(authorized_user, phase.id)
-        assert class_room.events.all().count() == 0
-

@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.db import models
 
@@ -50,9 +51,8 @@ class ClassRoom(models.Model):
         return self
 
     def change_phase(self, user, phase_id):
-        if phase_id in [phase.id for phase in self.course.phases.all()]:
-            Event(action=EVENT_ACTION_CHANGE_PHASE, class_room=self, user=user,
-                  to_phase_id=phase_id).save()
+        Event(action=EVENT_ACTION_CHANGE_PHASE, class_room=self, user=user,
+              to_phase_id=phase_id).save()
         return self
 
     def __str__(self):
