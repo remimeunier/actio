@@ -1,4 +1,5 @@
 import pytest
+import json
 from api.tests.factory import request_factory
 from rest_framework import status
 from rest_framework.authtoken.models import Token
@@ -228,4 +229,4 @@ class TestChangePhase:
           HTTP_AUTHORIZATION='Token {}'.format(Token.objects.create(user=authorized_user)))
         view = ChangePhase.as_view()
         response = view(request, class_room_id=class_room.id)
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
