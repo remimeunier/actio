@@ -1,4 +1,5 @@
 import pytest
+import time
 from django.db.utils import IntegrityError
 
 from api.constants import (
@@ -69,7 +70,7 @@ class TestClassRoom:
         assert authorized_user not in class_room.attending.all()
 
     @pytest.mark.django_db
-    def test_change_to_correct_phase(self, authorized_user, class_room):
+    def test_change_phase(self, authorized_user, class_room):
         class_room.change_phase(authorized_user, class_room.course.phases.all()[1].id)
         assert class_room.events.all().count() == 1
         event = class_room.events.all()[0]
@@ -77,3 +78,22 @@ class TestClassRoom:
         assert event.user == authorized_user
         assert event.to_phase_id == class_room.course.phases.all()[1].id
 
+    @pytest.mark.django_db
+    def test_calculate_timer_value(self, authorized_user, course):
+        class_room = ClassRoom.kick_off(course, authorized_user)
+        class_room.leave(authorized_user)
+        time.sleep(1)
+        class_room.join(authorized_user)
+        class_room.change_phase(authorized_user, class_room.course.phases.all()[1].id)
+        time.sleep(1)
+        class_room.leave(authorized_user)
+        time.sleep(1)
+        class_room.join(authorized_user)
+        assert class_room.events.all().count() == 7
+        assert class_room.events.all()[0].timer == 0
+        assert class_room.events.all()[1].timer == 0
+        assert class_room.events.all()[2].timer == 0
+        assert class_room.events.all()[3].timer == 0
+        assert class_room.events.all()[4].timer == 0
+        assert class_room.events.all()[5].timer == 1
+        assert class_room.events.all()[6].timer == 2

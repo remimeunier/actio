@@ -8,7 +8,7 @@ def authorized_user(db):
 
 @pytest.fixture
 def course(db):
-    phase = Phase(title='Lobby')
+    phase = Phase(title='Lobby', timer=False)
     phase.save()
     phase2 = Phase(title='calculate', timer=True)
     phase2.save()
