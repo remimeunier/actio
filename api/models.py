@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from django.core.exceptions import ValidationError
 from django.contrib.auth.models import User
 from django.db import models
@@ -41,19 +42,28 @@ class ClassRoom(models.Model):
     def join(self, user):
         self.attending.add(user)
         self.save()
-        Event(action=EVENT_ACTION_JOIN, class_room=self, user=user).save()
+        Event(action=EVENT_ACTION_JOIN, class_room=self, user=user, timer=self._get_event_timer()).save()
         return self
 
     def leave(self, user):
         self.attending.remove(user)
         self.save()
-        Event(action=EVENT_ACTION_LEAVE, class_room=self, user=user).save()
+        Event(action=EVENT_ACTION_LEAVE, class_room=self, user=user, timer=self._get_event_timer()).save()
         return self
 
     def change_phase(self, user, phase_id):
         Event(action=EVENT_ACTION_CHANGE_PHASE, class_room=self, user=user,
-              to_phase_id=phase_id).save()
+              to_phase_id=phase_id, timer=self._get_event_timer()).save()
         return self
+
+    def _get_event_timer(self):
+        last_event = self.events.filter(to_phase__isnull=False).order_by('created_at').last()
+        if last_event is None:
+            return 0
+        elif last_event.to_phase.timer == True:
+            return last_event.timer + (datetime.now(timezone.utc) - last_event.created_at).total_seconds()
+        else:
+            return last_event.timer
 
     def __str__(self):
         return 'class room of : {}'.format(self.course.title)
@@ -66,6 +76,7 @@ class Event(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
     class_room = models.ForeignKey(ClassRoom, on_delete=models.CASCADE, related_name='events')
     created_at = models.DateTimeField(auto_now_add=True)
+    timer = models.IntegerField(blank=False, null=False, default=0)
 
     def __str__(self):
         return 'action {} at {} for {}'.format(self.action, self.created_at, self.class_room.id)

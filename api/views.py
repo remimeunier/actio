@@ -36,7 +36,6 @@ class CreateClassRoom(APIView):
         if course_id is None:
             return build_error_response(status.HTTP_400_BAD_REQUEST, 'No phase ID rquested')
         course = get_object_or_404(Course.objects.select_related('default_phase'), pk=course_id)
-        # Create class room
         class_room = ClassRoom.kick_off(course, request.user)
 
         return Response(ClassRoomSerializer(class_room).data, status.HTTP_200_OK)
@@ -70,6 +69,7 @@ class ChangePhase(BaseClassRoomAction):
             return build_error_response(status.HTTP_400_BAD_REQUEST, 'Need a phase_id')
 
         class_room = self.retrieve_class_room(class_room_id)
+
         if int(to_phase_id) not in [phase.id for phase in class_room.course.phases.all()]:
             return build_error_response(status.HTTP_400_BAD_REQUEST, 'Can\'t go to this phase')
 

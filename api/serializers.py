@@ -29,7 +29,7 @@ class EventSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Event
-        fields = ('id', 'to_phase', 'action', 'created_at', 'user')
+        fields = ('id', 'to_phase', 'action', 'created_at', 'user', 'timer')
 
 class ClassRoomSerializer(serializers.HyperlinkedModelSerializer):
     course = CourseSerializer(many=False, read_only=True)
